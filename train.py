@@ -25,6 +25,11 @@ from lesion.pipeline import MODEL_PATH
 MALIGNANT = {"mel", "bcc", "akiec"}
 
 
+def split(feats):
+    """Train/test indices. Split by lesion_id so images of the same lesion never leak between sets."""
+    return next(GroupShuffleSplit(1, test_size=0.2, random_state=42).split(feats, groups=feats.lesion_id))
+
+
 def featurize(path):
     try:
         clean, _, fov = preprocess.preprocess(preprocess.load_image(path))
@@ -85,8 +90,7 @@ def main():
     y = feats.dx.map(lambda d: "malignant" if d in MALIGNANT else "benign") if args.binary else feats.dx
     X = feats.drop(columns=["image_id", "lesion_id", "dx"]).fillna(0)
 
-    # Split by lesion_id so images of the same lesion never leak between train and test.
-    tr, te = next(GroupShuffleSplit(1, test_size=0.2, random_state=42).split(X, y, feats.lesion_id))
+    tr, te = split(feats)
     clf = RandomForestClassifier(n_estimators=500, class_weight="balanced_subsample",
                                  min_samples_leaf=2, n_jobs=-1, random_state=42)
     malignant = {"malignant"} if args.binary else MALIGNANT

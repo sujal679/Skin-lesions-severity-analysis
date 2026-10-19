@@ -50,6 +50,28 @@ Held-out test set (2,023 images), final level with TDS + classifier, % of each t
 When a trained model exists, a *risk index* = mean(normalised TDS, malignancy probability) is reported, and
 the level is escalated one step if the model's malignancy probability exceeds 0.7.
 
+## Results
+All figures use the held-out test set (2,023 images, 393 malignant), split by `lesion_id` so no lesion
+appears in both training and test data. Full numbers: [results/metrics.md](results/metrics.md).
+
+| | Default cutoff 0.50 | Tuned cutoff 0.23 |
+|---|---|---|
+| Malignant lesions caught (recall) | 36.4% | **80.2%** |
+| Benign lesions flagged | 5.0% | 32.5% |
+| Precision | 63.8% | 37.3% |
+
+Malignancy ROC-AUC: **0.832** for the classifier, 0.663 for the ABCD rule (TDS) alone.
+
+![ROC curve](results/roc_curve.png)
+![Confusion matrices](results/confusion_matrices.png)
+![Severity levels](results/severity_levels.png)
+![TDS distribution](results/tds_distribution.png)
+![Feature importance](results/feature_importance.png)
+![Segmentation examples](results/segmentation_examples.png)
+
+*Example images from HAM10000 (Tschandl, Rosendahl & Kittler, Sci. Data 5, 180161, 2018),
+licensed CC BY-NC 4.0.*
+
 ## Setup
 ```bash
 pip install -r requirements.txt
@@ -69,8 +91,9 @@ Malignant classes: `mel` (melanoma), `bcc` (basal cell carcinoma), `akiec` (acti
 ```bash
 python train.py --data data --binary      # benign vs malignant (features cached to data/features.csv)
 python train.py --data data               # 7-class
+python evaluate.py                        # result figures + metrics.md in results/
 python analyze.py image.jpg --save overlay.png
-streamlit run app.py                      # web interface
+python -m streamlit run app.py            # web interface
 ```
 Training splits by `lesion_id` to avoid the same lesion appearing in both train and test sets, and
 reports precision/recall/F1, confusion matrix, malignancy ROC-AUC and top feature importances.
@@ -78,11 +101,13 @@ reports precision/recall/F1, confusion matrix, malignancy ROC-AUC and top featur
 ## Project structure
 ```
 lesion/preprocess.py   hair removal, colour constancy
-lesion/segment.py      Otsu-based lesion segmentation
+lesion/segment.py      skin-distance Otsu + GrabCut lesion segmentation
 lesion/features.py     ABCD + colour + texture features
 lesion/severity.py     TDS and severity grading
 lesion/pipeline.py     end-to-end analysis
-train.py               classifier training/evaluation
+train.py               classifier training, cutoff and TDS calibration
+evaluate.py            result figures and metrics summary
+results/               generated figures (committed)
 analyze.py             CLI
 app.py                 Streamlit UI
 ```
