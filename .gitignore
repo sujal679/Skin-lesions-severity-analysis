@@ -1,0 +1,12 @@
+# Dataset (HAM10000, ~5 GB, CC BY-NC licence - download separately, see README)
+data/
+
+# Trained models (recreate with: python train.py --binary)
+models/
+
+# Python
+__pycache__/
+*.pyc
+
+# Local tooling
+.claude/
